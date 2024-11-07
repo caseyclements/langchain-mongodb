@@ -3,8 +3,7 @@ name: LangGraph on MongoD
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches: ["*"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
