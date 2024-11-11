@@ -28,7 +28,7 @@ jobs:
     name: cd ${{ matrix.working-directory }}
     strategy:
       matrix:
-        working-directory: "./libs/langgraph-checkpoint-mongodb"
+        working-directory: ["./libs/langgraph-checkpoint-mongodb"]
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ matrix.working-directory }}
