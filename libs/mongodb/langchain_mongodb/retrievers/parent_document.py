@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from importlib.metadata import version
-from typing import Any, List
+from typing import Any, List, Optional
 
 import pymongo
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
-from langchain_core.callbacks import (
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_text_splitters import TextSplitter
@@ -31,12 +29,12 @@ class MongoDBAtlasParentDocumentRetriever(ParentDocumentRetriever):
 
     Examples:
         >>> from langchain_mongodb.retrievers.parent_document import (
-        >>>     ParentDocumentRetriever
+        >>>     MongoDBAtlasVectorSearch
         >>> )
         >>> from langchain_text_splitters import RecursiveCharacterTextSplitter
         >>> from langchain_openai import OpenAIEmbeddings
         >>>
-        >>> retriever = ParentDocumentRetriever.from_connection_string(
+        >>> retriever = MongoDBAtlasVectorSearch.from_connection_string(
         >>>     "mongodb+srv://<user>:<clustername>.mongodb.net",
         >>>     OpenAIEmbeddings(model="text-embedding-3-large"),
         >>>     RecursiveCharacterTextSplitter(chunk_size=400),
@@ -59,7 +57,10 @@ class MongoDBAtlasParentDocumentRetriever(ParentDocumentRetriever):
     """Key stored in metadata pointing to parent document"""
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
         query_vector = self.vectorstore._embedding.embed_query(query)
 
