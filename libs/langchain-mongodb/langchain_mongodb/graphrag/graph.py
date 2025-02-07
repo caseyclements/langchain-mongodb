@@ -17,7 +17,6 @@ from langchain_core.messages import AIMessage
 from langchain_core.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.runnables import RunnableSequence
 from pymongo import MongoClient, UpdateOne
-from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 from pymongo.results import BulkWriteResult
 
@@ -91,7 +90,9 @@ class MongoDBGraphStore:
 
     def __init__(
         self,
-        collection: Collection,
+        connection_string: str,
+        database_name: str,
+        collection_name: str,
         entity_extraction_model: BaseChatModel,
         entity_prompt: ChatPromptTemplate = prompts.entity_prompt,
         query_prompt: ChatPromptTemplate = prompts.query_prompt,
@@ -105,7 +106,9 @@ class MongoDBGraphStore:
     ):
         """
         Args:
-            collection: Collection representing an Entity Graph
+            connection_string: A valid MongoDB connection URI.
+            database_name: The name of the database to connect to.
+            collection_name: The name of the collection that will function as Knowledge Graph.
             entity_extraction_model: LLM for converting documents into Graph of Entities and Relationships
             entity_prompt: Prompt to fill graph store with entities following schema
             query_prompt: Prompt extracts entities and relationships as search starting points.
@@ -119,6 +122,16 @@ class MongoDBGraphStore:
               - If "warn", the default, documents will be inserted but errors logged.
               - If "error", an exception will be raised if any document does not match the schema.
         """
+        self._client: MongoClient = MongoClient(
+            connection_string,
+            driver=DriverInfo(name="Langchain", version=version("langchain-mongodb")),
+        )
+        self._database = self._client[database_name]
+        if collection_name in self._database.list_collection_names():
+            self.collection = self._database[collection_name]
+        else:
+            self.collection = self._database.create_collection(collection_name)
+
         self.entity_extraction_model = entity_extraction_model
         self.entity_prompt = entity_prompt
         self.query_prompt = query_prompt
@@ -140,13 +153,12 @@ class MongoDBGraphStore:
             self.allowed_relationship_types = []
 
         if validate:
-            collection.database.command(
+            self.collection.database.command(
                 "collMod",
-                collection.name,
+                self.collection.name,
                 validator={"$jsonSchema": self._schema},
                 validationAction=validation_action,
             )
-        self.collection = collection
 
         # Include examples
         if entity_examples is None:
