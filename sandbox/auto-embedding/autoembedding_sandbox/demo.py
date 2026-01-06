@@ -17,6 +17,7 @@ B) Perform searches
 """
 
 import os
+import time
 
 from langchain_voyageai import VoyageAIEmbeddings
 from pymongo import MongoClient
@@ -34,7 +35,7 @@ byov_path = "content_embeddings"
 
 
 client = MongoClient(MONGODB_URI)
-db = client.test
+db = client["auto_embedding_demo"]
 print(f"{client.admin.command({'ping': 1}) =}")
 server_info = client.server_info()
 print(f"{server_info['version'] =}")
@@ -65,8 +66,8 @@ idx_byovector = SearchIndexModel(
     },
 )
 idx_name = coll_byov.create_search_index(idx_byovector)
-
-print(f"vector search index '{idx_name}' created successfully!")
+time.sleep(2)
+print(f"vector search index '{idx_name}' created.")
 
 # 2. Create a vectorSearch index where one provides the model ("type": "autoEmbed").
 idx_auto = SearchIndexModel(
@@ -84,8 +85,8 @@ idx_auto = SearchIndexModel(
     },
 )
 idx_name = coll_auto.create_search_index(idx_auto)
-print(f"{idx_name =}")
-print(f"vector search index '{idx_name}' created successfully!")
+time.sleep(2)
+print(f"vector search index '{idx_name}' created.")
 
 
 # 3 Add documents
@@ -126,12 +127,13 @@ bulk_embed_and_insert_texts(
     text_key=text_path,
     embedding_key=byov_path,
 )
-
+time.sleep(2)
 print(f"{coll_byov.find_one({}) = }")
 
 # b. To our collection with an auto-embedding vector search index.
 docs = [{text_path: t, **m} for t, m in zip(texts, metadatas, strict=False)]
 result = coll_auto.insert_many(docs)
+time.sleep(2)
 print(f"{coll_auto.find_one({}) = }")
 
 
