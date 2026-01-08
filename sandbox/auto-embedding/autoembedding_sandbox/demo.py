@@ -76,10 +76,10 @@ idx_auto = SearchIndexModel(
     definition={
         "fields": [
             {
-                "type": "text",  #  todo: soon "autoEmbed",
+                "type": "autoEmbed",  #  todo: "autoEmbed". was "text"
                 "path": text_path,  # "content",
-                "model": "voyage-3.5",
-                # "modality": "text",  todo soon
+                "model": "voyage-4",  # todo: newer builds no longer support voyage-3.5
+                "modality": "text",  # todo comment out if type == "text"
             }
         ]
     },
