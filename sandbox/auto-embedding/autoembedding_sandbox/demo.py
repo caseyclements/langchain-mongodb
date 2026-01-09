@@ -160,7 +160,7 @@ pipeline = [
         "$vectorSearch": {
             "index": idx_auto.document["name"],
             "path": text_path,
-            "query": query,
+            "query": {"text": query},
             "limit": n_docs,
             "numCandidates": n_docs * 10,
         }
