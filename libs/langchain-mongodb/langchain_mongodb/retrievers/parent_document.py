@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 import pymongo
 from langchain_classic.retrievers.parent_document_retriever import (
@@ -23,7 +23,11 @@ from langchain_mongodb.pipelines import (
     autoembedding_vector_search_stage,
     vector_search_stage,
 )
-from langchain_mongodb.utils import DRIVER_METADATA, make_serializable
+from langchain_mongodb.utils import (
+    DRIVER_METADATA,
+    make_serializable,
+    prepare_query_for_vector_search,
+)
 
 
 class MongoDBAtlasParentDocumentRetriever(ParentDocumentRetriever):
@@ -83,26 +87,20 @@ class MongoDBAtlasParentDocumentRetriever(ParentDocumentRetriever):
         *,
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
-        # Check if using auto embeddings
-        is_autoembedding = isinstance(self.vectorstore._embedding, AutoEmbeddings)
-
-        # Only embed query if not using auto embeddings
-        query_input: str | list[float]
-        if is_autoembedding:
-            query_input = query
-        else:
-            query_input = self.vectorstore._embedding.embed_query(query)
+        # Prepare query for vector search (handles auto embeddings check)
+        query_input, is_autoembedding = prepare_query_for_vector_search(
+            query, self.vectorstore._embedding
+        )
 
         # Build the vector search stage based on embedding type
         if is_autoembedding:
             assert isinstance(query_input, str)
-            # Type narrowing: we know _embedding is AutoEmbeddings here
-            assert isinstance(self.vectorstore._embedding, AutoEmbeddings)
+            auto_embedding = cast(AutoEmbeddings, self.vectorstore._embedding)
             vector_stage = autoembedding_vector_search_stage(
                 query=query_input,
                 search_field=self.vectorstore._text_key,
                 index_name=self.vectorstore._index_name,
-                model=self.vectorstore._embedding.model,
+                model=auto_embedding.model,
                 **self.search_kwargs,  # See MongoDBAtlasVectorSearch
             )
         else:
