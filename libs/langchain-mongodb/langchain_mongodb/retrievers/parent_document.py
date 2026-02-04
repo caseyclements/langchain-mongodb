@@ -39,6 +39,10 @@ class MongoDBAtlasParentDocumentRetriever(ParentDocumentRetriever):
     embed each one, and store them in a vector database.
     Using such small chunks (a sentence or a couple of sentences)
     helps the embedding models to better reflect their meaning.
+    If two high scoring chunks are contained in the same document,
+    the query response will include the parent document just once.
+    One can control the number of chunks found in the vector_search_stage by setting
+    search_kwargs == {'top_k': n}. The number of query responses will be <= top_k.
 
     In this implementation, we can store both parent and child documents in a single
     collection while only having to compute and index embedding vectors for the chunks!
@@ -80,6 +84,9 @@ class MongoDBAtlasParentDocumentRetriever(ParentDocumentRetriever):
 
     id_key: str = "doc_id"
     """Key stored in metadata pointing to parent document"""
+
+    search_kwargs: dict | None = None
+    """Kwargs to be passed to vector_search_stage. e.g. {'top_k': 5}. """
 
     def _get_relevant_documents(
         self,
